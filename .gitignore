@@ -1,0 +1,10 @@
+.idea
+build
+.project
+*.kdev4*
+
+# Visual Studio
+*.sln
+*.ncb
+*.vcproj
+
