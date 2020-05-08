@@ -1,9 +1,11 @@
 #version 330 core
 
-in vec3 ourColor;
+in vec3 vertexColor;
 
-out vec4 color;
+out vec4 FragColor;
+
+uniform vec4 ourColor; // 在OpenGL程序代码中设定这个变量
 
 void main() {
-    color = vec4(ourColor, 1.0f);
+    FragColor = vec4(vertexColor, 1.0f) + ourColor;
 }

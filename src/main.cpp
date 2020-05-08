@@ -53,24 +53,34 @@ int main(int argc, char * argv[]) {
 
     // 顶点输入
     GLfloat vertices[] = {
-            // Positions         // Colors
-            0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // Bottom Right
-            -0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,  // Bottom Left
-            0.0f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f   // Top
+        // Positions            // Colors
+        0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,
+        0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,
+        -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,   0.0f,   1.0f, 1.0f, 1.0f
     };
-
+    
+    unsigned int indices[] = {
+        0, 1, 3,
+        1, 2, 3
+    };
 
     // 顶点数组对象 Vertex Array Object, VAO
     // 顶点缓冲对象 Vertex Buffer Object，VBO
     // 索引缓冲对象：Element Buffer Object，EBO或Index Buffer Object，IBO
-    GLuint VAO, VBO;
+    GLuint VAO, VBO, VEO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    // !!! Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
+    glGenBuffers(1, &VEO);
+    
     glBindVertexArray(VAO);
+    
     // 把顶点数组复制到缓冲中供OpenGL使用
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // 设置顶点position属性指针
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
@@ -79,6 +89,8 @@ int main(int argc, char * argv[]) {
     // 设置顶点color属性指针
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
 
@@ -96,13 +108,18 @@ int main(int argc, char * argv[]) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-
+        ourShader.use();
+        
+        // 更新uniform颜色
+        float timeValue = glfwGetTime();
+        float greenValue = sin(timeValue) / 2.0f + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(ourShader.ID, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
         // 绘图
-        ourShader.Use();
         glBindVertexArray(VAO);
-//        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
+//        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glad_glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 
         // 交换缓冲
         glfwSwapBuffers(window);
