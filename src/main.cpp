@@ -1,6 +1,7 @@
 
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <string>
 
 #include "common.h"
 #include "shader.h"
@@ -53,11 +54,11 @@ int main(int argc, char * argv[]) {
 
     // 顶点输入
     GLfloat vertices[] = {
-        // Positions            // Colors
-        0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,
-        0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,
-        -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,   0.0f,   1.0f, 1.0f, 1.0f
+        // Positions            // Colors           //Texture
+        0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+        0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+        -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+        -0.5f,  0.5f,   0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f
     };
     
     unsigned int indices[] = {
@@ -83,20 +84,45 @@ int main(int argc, char * argv[]) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // 设置顶点position属性指针
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
     // 设置顶点color属性指针
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
     
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glBindVertexArray(0);
+    // 设置纹理texture属性指针
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
+    
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//    glBindVertexArray(0);
 
     // 使用线框模式进行渲染
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+    
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);    // set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    int w, h, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *data = stbi_load(std::string("res/textures/container.jpg").c_str(), &w, &h, &nrChannels, 0);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
 
     // 渲染
     while (!glfwWindowShouldClose(window))
@@ -110,11 +136,11 @@ int main(int argc, char * argv[]) {
 
         ourShader.use();
         
-        // 更新uniform颜色
-        float timeValue = glfwGetTime();
-        float greenValue = sin(timeValue) / 2.0f + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(ourShader.ID, "ourColor");
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+//        // 更新uniform颜色
+//        float timeValue = glfwGetTime();
+//        float greenValue = sin(timeValue) / 2.0f + 0.5f;
+//        int vertexColorLocation = glGetUniformLocation(ourShader.ID, "ourColor");
+//        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
         // 绘图
         glBindVertexArray(VAO);
 //        glDrawArrays(GL_TRIANGLES, 0, 3);
