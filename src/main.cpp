@@ -1,12 +1,9 @@
 
-#include <GLFW/glfw3.h>
 #include <iostream>
 #include <string>
 
 #include "common.h"
 #include "shader.h"
-#include "glad/glad.h"
-#include "glm/glm.hpp"
 
 // 声明按键函数
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -102,14 +99,13 @@ int main(int argc, char * argv[]) {
     // 使用线框模式进行渲染
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    GLuint texture1, texture2;
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
     
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);    // set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
+    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
@@ -123,6 +119,30 @@ int main(int argc, char * argv[]) {
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
+    
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    stbi_set_flip_vertically_on_load(true);
+    data = stbi_load(std::string("res/textures/awesomeface.png").c_str(), &w, &h, &nrChannels, 0);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+    
+    ourShader.use();
+    
+    glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0);
+    glUniform1i(glGetUniformLocation(ourShader.ID, "texture2"), 1);
 
     // 渲染
     while (!glfwWindowShouldClose(window))
@@ -133,8 +153,30 @@ int main(int argc, char * argv[]) {
         // 渲染指令
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        
+        glm::mat4 trans = glm::mat4(1.0f);
+//        trans = glm::rotate(trans, glm::radians(-90.f), glm::vec3(0.0, 0.0, 1.0));
+//        trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+        
+        //围绕Z轴旋转
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        
+        auto ptr = glm::value_ptr(trans);
+        std::cout << ptr[0];
+        std::cout << ptr[1];
+        std::cout << ptr[2];
+        std::cout << ptr[3];
 
         ourShader.use();
+    
+        unsigned int transformLocation = glGetUniformLocation(ourShader.ID, "transform");
+        glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(trans));
         
 //        // 更新uniform颜色
 //        float timeValue = glfwGetTime();
