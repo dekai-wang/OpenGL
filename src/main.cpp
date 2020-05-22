@@ -33,29 +33,17 @@ int main(int argc, char * argv[]) {
 
     // Load OpenGL Functions
     gladLoadGL();
-//    fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
-    std::cout << "OpenGL " << glGetString(GL_VERSION) << std::endl;
-
-    // 查询GPU最大支持顶点个数
-    GLint nrAttributes;
-    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
-
-    // 获取视口
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
 
     // 编译着色器程序
     Shader ourShader("res/vert.vert", "res/frag.frag");
 
     // 顶点输入
     GLfloat vertices[] = {
-        // Positions            // Colors           //Texture
-        0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
-        0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-        -0.5f,  0.5f,   0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f
+        // Positions            //Texture
+        0.5f,   0.5f,   0.0f,   1.0f, 1.0f,
+        0.5f,   -0.5f,  0.0f,   1.0f, 0.0f,
+        -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f,
+        -0.5f,  0.5f,   0.0f,   0.0f, 1.0f
     };
     
     unsigned int indices[] = {
@@ -66,10 +54,10 @@ int main(int argc, char * argv[]) {
     // 顶点数组对象 Vertex Array Object, VAO
     // 顶点缓冲对象 Vertex Buffer Object，VBO
     // 索引缓冲对象：Element Buffer Object，EBO或Index Buffer Object，IBO
-    GLuint VAO, VBO, VEO;
+    GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &VEO);
+    glGenBuffers(1, &EBO);
     
     glBindVertexArray(VAO);
     
@@ -77,20 +65,16 @@ int main(int argc, char * argv[]) {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // 设置顶点position属性指针
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
-
-    // 设置顶点color属性指针
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
     
     // 设置纹理texture属性指针
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
     
 //    glBindBuffer(GL_ARRAY_BUFFER, 0);
 //
@@ -154,35 +138,28 @@ int main(int argc, char * argv[]) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
+         ourShader.use();
+        
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
-        
-        glm::mat4 trans = glm::mat4(1.0f);
-//        trans = glm::rotate(trans, glm::radians(-90.f), glm::vec3(0.0, 0.0, 1.0));
-//        trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
-        
-        //围绕Z轴旋转
-        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-        
-        auto ptr = glm::value_ptr(trans);
-        std::cout << ptr[0];
-        std::cout << ptr[1];
-        std::cout << ptr[2];
-        std::cout << ptr[3];
 
-        ourShader.use();
+       
     
-        unsigned int transformLocation = glGetUniformLocation(ourShader.ID, "transform");
-        glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(trans));
+        // create transformations
+        glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        glm::mat4 view          = glm::mat4(1.0f);
+        glm::mat4 projection    = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
+
+        ourShader.setMat4("model", model);
+        ourShader.setMat4("view", view);
+        ourShader.setMat4("projection", projection);
         
-//        // 更新uniform颜色
-//        float timeValue = glfwGetTime();
-//        float greenValue = sin(timeValue) / 2.0f + 0.5f;
-//        int vertexColorLocation = glGetUniformLocation(ourShader.ID, "ourColor");
-//        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
         // 绘图
         glBindVertexArray(VAO);
 //        glDrawArrays(GL_TRIANGLES, 0, 3);
